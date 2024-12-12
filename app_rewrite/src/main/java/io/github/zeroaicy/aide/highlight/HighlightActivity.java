@@ -155,7 +155,7 @@ public class HighlightActivity extends ThemedActionbarActivity implements Adapte
 		sm.add("还原暗主题").setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener(){
 				@Override
 				public boolean onMenuItemClick(MenuItem menuItem) {
-					CodeTheme.restore(true);
+					CodeTheme.restore(false);
 
 					onTabSelected(getActionBar().getSelectedTab(), null);
 
