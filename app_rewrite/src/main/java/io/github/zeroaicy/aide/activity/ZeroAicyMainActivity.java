@@ -27,12 +27,14 @@ import android.webkit.MimeTypeMap;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.core.content.FileProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
 import com.aide.common.AndroidHelper;
 import com.aide.common.AppLog;
 import com.aide.ui.MainActivity;
 import com.aide.ui.ServiceContainer;
 import com.aide.ui.rewrite.R;
+import com.aide.ui.services.OpenFileService;
 import com.aide.ui.util.FileSpan;
 import com.aide.ui.util.FileSystem;
 import com.aide.ui.views.SplitView;
@@ -52,8 +54,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import com.aide.ui.services.OpenFileService;
-import androidx.core.content.FileProvider;
 
 public class ZeroAicyMainActivity extends MainActivity {
 
@@ -64,8 +64,13 @@ public class ZeroAicyMainActivity extends MainActivity {
 
 	static ZeroAicyExtensionInterface zeroAicyExtensionInterface;
 
+	boolean isRecreate = false;
 	@Override
 	public void onCreate(Bundle bundle) {
+		if (isRecreate) {
+			return;
+		}
+
 		super.onCreate(bundle);
 		// 隐藏Home键
 		getActionBar().setDisplayShowHomeEnabled(false);
@@ -96,6 +101,7 @@ public class ZeroAicyMainActivity extends MainActivity {
 	@Override
 	public void recreate() {
 		this.isExit = false;
+		this.isRecreate = true;
 		super.recreate();
 	}
 
@@ -104,18 +110,30 @@ public class ZeroAicyMainActivity extends MainActivity {
 		super.finish();
 		exit();
 	}
+
 	@Override
 	protected void onDestroy() {
+		AppLog.d(TAG, "onDestroy() this -> %s" , this);
+		
+		
+//		//  Trying to restart engine service
+//		// ServiceContainer.shutdown()
+//		EngineService engineService = ServiceContainer.getEngineService();
+//		// 
+//		engineService.lp();
+//		
 		super.onDestroy();
 		exit();
 	}
 
 	private void exit() {
 		if (this.isExit) {
+			this.isExit = false;
 			// 强制退出，防止ServiceContainer::shutdown()与异步导致的错误
 			System.exit(0);
 			android.os.Process.killProcess(android.os.Process.myPid());
 		}
+
 	}
 
 
@@ -126,7 +144,7 @@ public class ZeroAicyMainActivity extends MainActivity {
 		return !ServiceContainer.isTrainerMode() 
 			&& ZeroAicySetting.enableActionDrawerLayout();
 	}
-	
+
 	public void q7Async() {
 		super.q7();
 	}
