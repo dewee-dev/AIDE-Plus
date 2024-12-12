@@ -52,7 +52,8 @@ public class AIDEEditor extends com.aide.ui.AIDEEditor {
                 return;
             }
 			boolean isLight = this.ee.isLightTheme();
-			Resources.Theme theme = getContext().getTheme();
+			Context context = getContext();
+			Resources.Theme theme = context.getTheme();
 			Resources resources = getResources();
 			
 			// is Material主题
@@ -65,7 +66,7 @@ public class AIDEEditor extends com.aide.ui.AIDEEditor {
 
 			// 背景颜色
             //this.graphicsColor = new Color(getResources().getColor(isLight ? R.color.editor_background_light : R.color.editor_background));
-			this.graphicsColor = new Color(io.github.zeroaicy.aide.highlight.ColorKind.EDITOR_BACKGROUND.getColor(getContext(), isLight));
+			this.graphicsColor = new Color(io.github.zeroaicy.aide.highlight.ColorKind.EDITOR_BACKGROUND.getColor(context, isLight));
 
 			// 光标所在行背景色
 			this.Za = this.jn ? new Color(resources.getColor(isLight ? R.color.editor_caret_line_light : R.color.editor_caret_line, theme)): null;

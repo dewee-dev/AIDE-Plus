@@ -35,7 +35,7 @@ public class CodeTheme {
 		for ( ColorKind colorKind : colorKindMap.values() ) {
 			colorKind.restoreDefault(isLight);
 		}
-		codeThemePreferences.edit().clear().apply();
+		codeThemePreferences.edit().clear().commit();
 	}
 
 	public static void init( Context context ) {

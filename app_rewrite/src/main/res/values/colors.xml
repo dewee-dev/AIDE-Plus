@@ -6,4 +6,7 @@
 	<color name="editor_syntax_unused">#FF9B9B9B</color>
     <color name="editor_syntax_unused_light">#FF9B9B9B</color>
 	
+	<color name="editor_syntax_argument_identifier">#FFAAEEEE</color>
+	<color name="editor_syntax_argument_identifier_light">#FF000000</color>
+    
 </resources>

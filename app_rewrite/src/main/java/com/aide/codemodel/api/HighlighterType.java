@@ -10,7 +10,7 @@ public class HighlighterType{
 	// 采用负值 防止与 SyntaxStyleType ordinal 冲突
 	// 未使用
 	public static final int UnUsed = -1;
-	// 未使用
+	// 方法参数标识符
 	public static final int ArgumentIdentifier = -2;
 	
 	

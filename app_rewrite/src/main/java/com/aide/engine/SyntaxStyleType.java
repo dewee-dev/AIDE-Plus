@@ -39,7 +39,7 @@ public enum SyntaxStyleType {
 	// "字符串、数字、布尔值颜色"
 	LITERAL("Literal", R.color.editor_syntax_literal_light, R.color.editor_syntax_literal, Typeface.NORMAL),
 
-	PREPROCESSOR("Preprocessor", R.color.editor_syntax_plain, R.color.editor_syntax_plain, Typeface.NORMAL),
+	PREPROCESSOR("Preprocessor", R.color.editor_syntax_plain_light, R.color.editor_syntax_plain, Typeface.NORMAL),
 
 	// NORMAL -> ITALIC
 	// "代码注释颜色"
@@ -54,7 +54,7 @@ public enum SyntaxStyleType {
 	// 未使用
 	UNUSED("Unused", R.color.editor_syntax_unused_light, R.color.editor_syntax_unused, Typeface.NORMAL),
 	// 参数标识符
-	ARGUMENT_IDENTIFIER("Argument Identifier", R.color.material_grey_100, R.color.material_grey_100, Typeface.ITALIC),
+	ARGUMENT_IDENTIFIER("Argument Identifier", R.color.editor_syntax_argument_identifier_light, R.color.editor_syntax_argument_identifier, Typeface.ITALIC),
 	
 	// 必须是最后一个
 	// Lcom/aide/engine/StyleSpan;->gn(BIIII)V
@@ -70,9 +70,12 @@ public enum SyntaxStyleType {
     private final int typefaceStyle;
 
 	private final ColorKind colorKind;
+	
+	private final boolean isColorValue;
     private SyntaxStyleType(String enumName, int lightResId, int darkResId, int typefaceStyle) {
 		// this.enumName = enumName;
 
+		this.isColorValue = false;
 		this.lightResId = lightResId;
 		this.darkResId = darkResId;
 		// 粗体 斜体 
@@ -80,15 +83,30 @@ public enum SyntaxStyleType {
 
 		// 绑定ColorKind;
 		this.colorKind = CodeTheme.getColorKind(enumName);
-		
     }
+	
+	private SyntaxStyleType(String enumName, boolean isColorValue, int lightColorValue, int darkColorValue, int typefaceStyle) {
+		this.isColorValue = true;;
+		this.lightResId = lightColorValue;
+		this.darkResId = darkColorValue;
+		// 粗体 斜体 
+		this.typefaceStyle = typefaceStyle;
+		// 绑定ColorKind;
+		this.colorKind = CodeTheme.getColorKind(enumName);
+	}
+	
 	
     public int getColor(Context context, boolean isLight) {
 		
 		if( this.colorKind != null){
 			return this.colorKind.getColor(context, isLight);
 		}
-
+		// 颜色值模式
+		if( this.isColorValue){
+			return isLight ? lightResId : darkResId;
+		}
+		
+		// 颜色Id模式
 		return context.getColor(isLight ? lightResId : darkResId);
 	}
 
