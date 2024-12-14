@@ -60,7 +60,8 @@ public class AddAndroidFiles {
 							
 							ProjectService projectService = ServiceContainer.getProjectService();
 							// 内容
-							String sourceContent = String.format("/**\n * @Author %s\n * @AIDE AIDE+\n*/\n", ZeroAicySetting.getDefaultSpString("git_user_name", ""));
+							String sourceContent = 
+							!ZeroAicySetting.isEnableAutoClassComments() ? "" : String.format("/**\n * @Author %s\n * @AIDE AIDE+\n*/\n", ZeroAicySetting.getDefaultSpString("git_user_name", ""));
 
 							// 包名
 							String packageName = AndroidProjectSupport.Ev(projectService.getLibraryMapping(), projectService.getFlavor(), javaFileParentPath);

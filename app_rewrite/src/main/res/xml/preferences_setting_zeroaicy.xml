@@ -148,7 +148,20 @@
         </PreferenceCategory>
 
     </PreferenceScreen>
-
+	<PreferenceScreen
+		android:title="工程设置">
+		<PreferenceCategory
+			android:title="添加新类">
+			<SwitchPreference
+                android:title="类头部注释"
+                android:key="zero_aicy_enable_auto_class_comments"
+                android:summary="新建类时自动在开头添加一段注释\nAIDE 以及作者(git版本控制中编辑)"
+                android:defaultValue="true" />
+            
+		</PreferenceCategory>
+		
+	</PreferenceScreen>
+		
 	<PreferenceScreen
         android:title="实验室"
         android:summary="不稳定的功能">

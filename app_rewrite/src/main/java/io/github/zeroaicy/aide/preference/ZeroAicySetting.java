@@ -183,6 +183,12 @@ public class ZeroAicySetting {
 	}
 
 	/**
+	 * 工程设置
+	 */
+	public static boolean isEnableAutoClassComments( ) {
+		return ZeroAicySetting.defaultSp.getBoolean("zero_aicy_enable_auto_class_comments", true);
+	}
+	/**
 	 * 实验室
 	 */
 
