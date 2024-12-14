@@ -54,10 +54,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import android.view.Display;
 
 public class ZeroAicyMainActivity extends MainActivity {
 
 
+	// 用于通知AIDE CodeModel
+	@SuppressWarnings("unused") 
 	private static final String TAG_1595554556 = "ZeroAicyMainActivity";
 
 	private static final String TAG = "ZeroAicyMainActivity";
@@ -113,9 +116,7 @@ public class ZeroAicyMainActivity extends MainActivity {
 
 	@Override
 	protected void onDestroy() {
-		AppLog.d(TAG, "onDestroy() this -> %s" , this);
-		
-		
+
 //		//  Trying to restart engine service
 //		// ServiceContainer.shutdown()
 //		EngineService engineService = ServiceContainer.getEngineService();
@@ -376,8 +377,17 @@ public class ZeroAicyMainActivity extends MainActivity {
 
 	//当前屏幕的高度
 	public static float Zo(Context context) {
-        try {
-            return ((WindowManager) context.getSystemService("window")).getDefaultDisplay().getHeight() / context.getResources().getDisplayMetrics().density;
+		try {
+
+			@SuppressWarnings("deprecation") 
+				Display defaultDisplay = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? 
+				context.getDisplay() 
+				: ((WindowManager) context.getSystemService("window")).getDefaultDisplay();
+
+
+			// Display defaultDisplay = ((WindowManager) context.getSystemService("window")).getDefaultDisplay();
+			int height = defaultDisplay.getHeight();
+			return height / context.getResources().getDisplayMetrics().density;
         }
 		catch (Throwable t) {
 			throw new RuntimeException(t);

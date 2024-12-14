@@ -49,7 +49,7 @@ import java.util.Map;
  * @author Thomas Darimont
  */
 public class ReflectPie {
-	private static final String TAG = "ReflectPie";
+	// private static final String TAG = "ReflectPie";
 	
 	private static boolean initialized = false;
 	private static boolean IsReflectPie = reflectAll();

@@ -1,6 +1,5 @@
 package io.github.zeroaicy.aide.preference;
 
-import com.probelytics.Probelytics;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
@@ -8,18 +7,19 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 import com.aide.ui.preferences.PreferencesActivity;
 import com.aide.ui.rewrite.R;
-import java.util.List;
-import android.os.Build;
+import com.probelytics.Probelytics;
 import java.util.Collections;
+import java.util.List;
 
+@SuppressWarnings("deprecation") 
 public class ZeroAicyPreferencesActivity extends PreferencesActivity implements ActionBar.TabListener {
 
     @SuppressWarnings({"unused"})
@@ -84,7 +84,7 @@ public class ZeroAicyPreferencesActivity extends PreferencesActivity implements 
 
 		ActionBar actionbar = actionBar;
 
-		actionbar.setNavigationMode(actionbar.NAVIGATION_MODE_TABS);
+		actionbar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
 		actionbar.addTab(
 			actionbar

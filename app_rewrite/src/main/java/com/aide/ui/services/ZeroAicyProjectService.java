@@ -65,6 +65,7 @@ public class ZeroAicyProjectService extends ProjectService {
 	/**
 	 * 必须在主线程调用
 	 */
+	@SuppressWarnings("deprecation") 
 	public static void showProgressDialog(Activity activity, String string, final Runnable asynTask, final Runnable onUiTask) {
 		final ProgressDialog show = ProgressDialog.show(activity, null, string, true, false);
 		show.getWindow().addFlags(128);

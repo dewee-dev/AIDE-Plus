@@ -142,12 +142,17 @@ public abstract class CrashAppLog implements Thread.UncaughtExceptionHandler {
                 PackageInfo packageInfo = packageManager.getPackageInfo(mContext.getPackageName(), PackageManager.GET_ACTIVITIES);
                 if (packageInfo != null) {
 
+                    @SuppressWarnings("deprecation") 
+						long versionCode = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P ? 
+						packageInfo.getLongVersionCode() :
+						packageInfo.versionCode);
+
+					String versionCodeString = String.valueOf(versionCode);
                     String versionName = packageInfo.versionName;
-                    String versionCode = "" + packageInfo.versionCode;
-                    String packName = packageInfo.packageName;
+					String packName = packageInfo.packageName;
 
                     crashAppLog.put("versionName", versionName);
-                    crashAppLog.put("versionCode", versionCode);
+                    crashAppLog.put("versionCode", versionCodeString);
                     crashAppLog.put("packName", packName);
 
                 }
@@ -168,7 +173,7 @@ public abstract class CrashAppLog implements Thread.UncaughtExceptionHandler {
 		 */
 		try {
 			crashAppLog.put("手机型号:", android.os.Build.MODEL);
-			crashAppLog.put("系统版本", "" + android.os.Build.VERSION.SDK);
+			crashAppLog.put("系统版本", "" + android.os.Build.VERSION.SDK_INT);
 			crashAppLog.put("Android版本", android.os.Build.VERSION.RELEASE);
 
 			Field[] fields = Build.class.getFields();
