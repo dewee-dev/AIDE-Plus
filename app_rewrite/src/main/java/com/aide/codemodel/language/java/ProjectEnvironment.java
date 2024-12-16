@@ -43,8 +43,6 @@ import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblem;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
-import com.aide.codemodel.api.collections.OrderedMapOfIntInt.Iterator;
-import com.aide.codemodel.api.FileSpace.Assembly;
 
 /**
  * 使用 Eclipse JDT Compiler 进行增量语义分析
@@ -277,8 +275,8 @@ public class ProjectEnvironment {
 			compilerOptions.complianceLevel = ClassFileConstants.JDK23;
 			compilerOptions.originalComplianceLevel = ClassFileConstants.JDK23;
 			compilerOptions.originalSourceLevel = ClassFileConstants.JDK23;
-
-			compilerOptions.targetJDK = ClassFileConstants.JDK23;
+			// 防止输出的 class asm不识别
+			compilerOptions.targetJDK = ClassFileConstants.JDK9;
 
 		}
 
