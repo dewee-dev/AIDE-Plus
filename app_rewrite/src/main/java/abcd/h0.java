@@ -68,8 +68,10 @@ public class h0 {
 			// 回调EclipseJavaCodeAnalyzer2填充语义高亮
 			eclipseJavaCodeAnalyzer2.fillSemanticHighlighter(syntaxTree.getFile());
 		}
+		
 		// 根据 SyntaxTree(AIDE语义) 填充高亮
 		fillSemanticHighlighter(syntaxTree, syntaxTree.getRootNode());
+		
 	}
 	
 	private void fillSemanticHighlighter( SyntaxTree syntaxTree, int nodeIndex ) {

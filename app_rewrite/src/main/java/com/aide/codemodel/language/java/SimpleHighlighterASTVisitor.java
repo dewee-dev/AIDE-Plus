@@ -50,11 +50,11 @@ public class SimpleHighlighterASTVisitor extends ASTVisitor {
 			? Util.searchColumnNumber(lineEnds, startLine, sourceStart)
 			: 0;
 
-		int endLine = sourceStart >= 0
+		int endLine = sourceEnd >= 0
 			? Util.getLineNumber(sourceEnd, lineEnds, 0, lineEnds.length - 1)
 			: 0;
 			
-		int endColumn = sourceStart >= 0
+		int endColumn = sourceEnd >= 0
 			? Util.searchColumnNumber(lineEnds, endLine, sourceEnd) + 1
 			: 0;
 

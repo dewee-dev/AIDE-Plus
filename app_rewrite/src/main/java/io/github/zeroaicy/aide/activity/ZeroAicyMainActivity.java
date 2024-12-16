@@ -441,7 +441,7 @@ public class ZeroAicyMainActivity extends MainActivity {
 
 	@Override
 	public void openFile(String str) {
-		String suffixName = FileSystem.getSuffixName(str);
+		String suffixName = FileSystem.getSuffixName(str).toLowerCase();
 		String mimeTypeFromExtension = MimeTypeMap.getSingleton().getMimeTypeFromExtension(suffixName);
 
 		if (mimeTypeFromExtension != null 

@@ -60,7 +60,7 @@ public enum ColorKind {
 	// R.color.xxxxx
 
 	// 亮主题颜色id
-	private final boolean isColorValue;
+	// private final boolean isColorValue;
 	private final int lightColorId;
 	private final int darkColorId;
 
@@ -88,7 +88,7 @@ public enum ColorKind {
 
 		this.colorName = colorName;
 
-		this.isColorValue = isColorValue;
+		// this.isColorValue = isColorValue;
 		this.lightColorId = lightColorId;
 		this.darkColorId = darkColorId;
 		
