@@ -61,6 +61,12 @@ dependencies {
 	
 	// jgit 7.0.0.202409031743-r
 	implementation "org.eclipse.jgit:org.eclipse.jgit:7.0.0.202409031743-r"
-
+	
 	api "org.bouncycastle:bcprov-jdk18on:1.78.1"
+	
+	// java-formatter依赖库 后期与java-formatter合并
+	api "org.eclipse.platform:org.eclipse.text:3.14.100"
+	compileOnly "org.osgi:org.osgi.framework:1.10.0"
+
+	
 }

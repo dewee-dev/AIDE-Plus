@@ -30,7 +30,7 @@ public class ZeroAicySetting implements SharedPreferences.OnSharedPreferenceChan
 	public static boolean getDefaultSpBoolean(String key, @Nullable boolean defValue) {
 		return defaultSp.getBoolean(key, defValue);
 	}
-	
+
 	private static SharedPreferences.OnSharedPreferenceChangeListener onSharedPreferenceChangeListener;
 	private static boolean isWatch;
 	public static void init(Context context) {
@@ -114,6 +114,10 @@ public class ZeroAicySetting implements SharedPreferences.OnSharedPreferenceChan
 	public static boolean isEnableShowWarning() {
 		return getDefaultSpBoolean("zero_aicy_enable_error_browser_show_warning", true); 
 	}
+
+	public static boolean isEnableEclipseJavaFormat() {
+		return getDefaultSpBoolean("zero_aicy_enable_eclipse_java_format", true); 
+	}
 	/*
 	 * 构建运行
 	 */
@@ -145,7 +149,7 @@ public class ZeroAicySetting implements SharedPreferences.OnSharedPreferenceChan
 		return getDefaultSpBoolean(key, defValue);
 	}
 
-	
+
 	/*重定义Apk构建路径*/
 	public static boolean isEnableAdjustApkBuildPath() {
 		return getDefaultSpBoolean("zero_aicy_adjust_apk_build_path", true);
@@ -204,7 +208,7 @@ public class ZeroAicySetting implements SharedPreferences.OnSharedPreferenceChan
 	public static boolean isEnableJavaAdjustSpaces() {
 		return getDefaultSpBoolean(JavaFormatOption.ADJUST_SPACES.getKey(), false);
 	}
-	
+
 
 	public static String getCurrentAppHome() {
 		return getProjectService().getString("CurrentAppHome", null);
@@ -250,14 +254,14 @@ public class ZeroAicySetting implements SharedPreferences.OnSharedPreferenceChan
 		return ZeroAicySetting.defaultSp.edit().putBoolean("test_zero_aicy_enable_ensure_capacity", false).commit();
 	}
 
-	
-	
+
+
 	private Context context;
 
 	public ZeroAicySetting(Context context) {
 		this.context = context;
 	}
-	
+
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if ("light_theme".equals(key)) {
@@ -280,12 +284,17 @@ public class ZeroAicySetting implements SharedPreferences.OnSharedPreferenceChan
 		if ("test_zero_aicy_enable_eclipse_compiler_for_java".equals(key)) {
 			if( isEnableEclipseCompilerForJava() ){
 				// ecj模式禁用 JavaFormatOption.ADJUST_SPACES
-				ZeroAicySetting.defaultSp.edit().putBoolean(JavaFormatOption.ADJUST_SPACES.getKey(), false).commit();
+				// 默认启用
+				ZeroAicySetting.defaultSp.edit()
+					.putBoolean(JavaFormatOption.ADJUST_SPACES.getKey(), false)
+					.putBoolean("zero_aicy_enable_eclipse_java_format", true).commit();
+
 			}
 		} else if (JavaFormatOption.ADJUST_SPACES.getKey().equals(key)) {
 			if( isEnableEclipseCompilerForJava() && isEnableJavaAdjustSpaces()){
 				// ecj模式禁用 JavaFormatOption.ADJUST_SPACES
-				ZeroAicySetting.defaultSp.edit().putBoolean(JavaFormatOption.ADJUST_SPACES.getKey(), false).commit();				
+				ZeroAicySetting.defaultSp.edit()
+					.putBoolean(JavaFormatOption.ADJUST_SPACES.getKey(), false).commit();				
 			}
 		}
 

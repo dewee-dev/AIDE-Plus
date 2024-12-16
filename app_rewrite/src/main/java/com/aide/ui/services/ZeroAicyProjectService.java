@@ -127,6 +127,7 @@ public class ZeroAicyProjectService extends ProjectService {
 			// Collections.synchronizedMap(new HashMap<String, List<String>>());
 			// 项目路径 -> 所有maven依赖
 			this.libraryMapping = new HashMap<String, List<String>>(){
+				public static final long serialVersionUID = 0x1;
 				@Override
 				public List<String> put(String key, List<String> value) {
 					if (!ZeroAicyProjectService.executorsService.isCurrentThread()) {
@@ -692,20 +693,20 @@ public class ZeroAicyProjectService extends ProjectService {
 
 		// 当dx() 现于此运行会置空锁
 		/*
-		Object lock = this.engineServiceConnectionLock;
-		if (lock != null) {
-			synchronized (lock) {
-				try {
-					// 等待5s防止死锁
-					AppLog.d("Waiting EngineServiceConnection");
-					lock.wait(5000);
+		 Object lock = this.engineServiceConnectionLock;
+		 if (lock != null) {
+		 synchronized (lock) {
+		 try {
+		 // 等待5s防止死锁
+		 AppLog.d("Waiting EngineServiceConnection");
+		 lock.wait(5000);
 
-				}
-				catch (Throwable e) {
-					AppLog.d(TAG, e);
-				}
-			}
-		}*/
+		 }
+		 catch (Throwable e) {
+		 AppLog.d(TAG, e);
+		 }
+		 }
+		 }*/
 
 		// 完成EngineServiceConnection，执行 jJ
 		// 同步EngineService
@@ -731,15 +732,15 @@ public class ZeroAicyProjectService extends ProjectService {
 	@Override
 	public void dx() {
 		super.dx();
-		
+
 	}
-	
+
 	public void dx2() {
 		// EngineService$EngineServiceConnection::onServiceConnected() -> EngineService::Mr()
 		// jJ() 
 		// 通知执行 jJAsync()
 		Object engineServiceConnectionLock = this.engineServiceConnectionLock;
-		
+
 		if (engineServiceConnectionLock == null) {
 			jJ();
 			return;
@@ -775,10 +776,11 @@ public class ZeroAicyProjectService extends ProjectService {
 				engineSolution = this.pojectSupport.makeEngineSolution();
 			} else {
 				// 置空
-				
+
 				List<String> hw = ServiceContainer.Hw();
 				TreeMap<String, List<String>> findCodeModels = CodeModelFactory.findCodeModels(hw);
-				engineSolution = new EngineSolution(Collections.emptyList(), (String) null, findCodeModels, hw);
+				List emptyList = Collections.emptyList();
+				engineSolution = new EngineSolution(emptyList, (String) null, findCodeModels, hw);
 			}
 			try {
 				// 设置 engineSolution

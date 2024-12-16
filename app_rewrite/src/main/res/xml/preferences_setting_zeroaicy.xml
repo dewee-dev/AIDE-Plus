@@ -71,6 +71,12 @@
 				android:title="代码高亮配置"
 				android:key="zero_aicy_preference_highlight" />
 		</PreferenceCategory>
+		<SwitchPreference
+			android:title="启用EclipseJavaFormat"
+			android:summary="启用ecj时建议用此格式化方案"
+			android:key="zero_aicy_enable_eclipse_java_format"
+			android:defaultValue="true" />
+		
 	</PreferenceScreen>
 
     <PreferenceScreen
