@@ -82,18 +82,17 @@ jobs:
     - name: Build Project
       run: |
         echo "Starting build process..."
-        # 尝试直接构建
-        ./gradlew build --warning-mode all --info --stacktrace || true
-        
-        # 如果直接构建失败，尝试特定模块
+        # 尝试直接构建AP文件
         if [ -f "app/build.gradle" ]; then
           echo "Building app module..."
-          ./gradlew :app:assembleDebug --warning-mode all --info --stacktrace || true
+          ./gradlew :app:assembleRelease --warning-mode all --info --stacktrace || true
+          ./gradlew :app:packageReleaseAp --warning-mode all --info --stacktrace || true
         fi
         
         if [ -f "app_rewrite/build.gradle" ]; then
           echo "Building app_rewrite module..."
-          ./gradlew :app_rewrite:assembleDebug --warning-mode all --info --stacktrace || true
+          ./gradlew :app_rewrite:assembleRelease --warning-mode all --info --stacktrace || true
+          ./gradlew :app_rewrite:packageReleaseAp --warning-mode all --info --stacktrace || true
         fi
       
     - name: Run Tests
@@ -142,12 +141,24 @@ jobs:
           find . -type d
         fi
         
-    - name: Upload APK
+    - name: Upload AP Files
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: app-debug
+        name: ap-files
         path: |
+          */build/outputs/ap/release/*.ap
+          */build/intermediates/ap/release/*.ap
+          */build/intermediates/processed_res/release/*.ap
+        if-no-files-found: warn
+        
+    - name: Upload APK Files
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: apk-files
+        path: |
+          */build/outputs/apk/release/*.apk
           */build/outputs/apk/debug/*.apk
         if-no-files-found: warn
         
