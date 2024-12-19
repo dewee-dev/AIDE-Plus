@@ -84,8 +84,24 @@ jobs:
       run: |
         echo "Starting APK build process..."
         
+        # 显示当前环境
+        echo "Environment variables:"
+        env
+        
+        echo "Android SDK location:"
+        echo $ANDROID_SDK_ROOT
+        ls -la $ANDROID_SDK_ROOT
+        
         # 检查并更新所有build.gradle文件
         find . -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} \;
+        
+        # 显示所有gradle文件内容
+        echo "Gradle files content:"
+        for f in $(find . -name "*.gradle"); do
+          echo "=== $f ==="
+          cat "$f"
+          echo "============"
+        done
         
         # 检查主要的构建目标
         if [ -f "app/build.gradle" ]; then
@@ -101,51 +117,54 @@ jobs:
         
         if [ ! -z "$MODULE" ]; then
           echo "Building module: $MODULE"
+          
+          # 显示gradle任务
+          echo "Available gradle tasks for $MODULE:"
+          ./gradlew :$MODULE:tasks --all
+          
           # 尝试构建APK
           echo "Building debug APK..."
-          ./gradlew :$MODULE:assembleDebug --warning-mode all --stacktrace || true
+          ./gradlew :$MODULE:assembleDebug --warning-mode all --info --stacktrace || true
           
           echo "Building release APK..."
-          ./gradlew :$MODULE:assembleRelease --warning-mode all --stacktrace || true
+          ./gradlew :$MODULE:assembleRelease --warning-mode all --info --stacktrace || true
           
           # 显示构建产物位置
           echo "Looking for APK files in module: $MODULE"
-          find . -name "*.apk" -ls
+          find . -type f -name "*.apk" -ls
+          
+          # 显示构建目录内容
+          echo "Build directory contents:"
+          find . -type f -path "*/build/*" -ls
         else
           echo "No Android application module found. Trying root project..."
-          ./gradlew build --warning-mode all --stacktrace || true
+          # 显示gradle任务
+          echo "Available gradle tasks:"
+          ./gradlew tasks --all
+          
+          ./gradlew build --warning-mode all --info --stacktrace || true
           
           # 显示构建产物位置
           echo "Looking for APK files in root project:"
-          find . -name "*.apk" -ls
+          find . -type f -name "*.apk" -ls
+          
+          # 显示构建目录内容
+          echo "Build directory contents:"
+          find . -type f -path "*/build/*" -ls
         fi
 
-    - name: Upload Debug APK
+    - name: Upload Build Artifacts
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: debug-apk
+        name: build-artifacts
         path: |
-          **/build/outputs/apk/debug/*.apk
-          **/*/build/outputs/apk/debug/*.apk
-        if-no-files-found: warn
-        
-    - name: Upload Release APK
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-apk
-        path: |
-          **/build/outputs/apk/release/*.apk
-          **/*/build/outputs/apk/release/*.apk
-        if-no-files-found: warn
-
-    - name: Upload Build Reports
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-reports
-        path: |
+          # APK files
+          **/*.apk
+          # Build outputs
+          **/build/**/*
+          # Gradle logs
+          .gradle/daemon/*/daemon-*.out.log
+          # Build reports
           **/build/reports/**/*
-          **/*/build/reports/**/*
         if-no-files-found: warn
