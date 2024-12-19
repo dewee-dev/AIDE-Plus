@@ -99,10 +99,67 @@ jobs:
         echo 'include ":app"
         rootProject.name = "AIDE-Plus"' > settings.gradle
 
+        # Create basic Android project structure
+        mkdir -p app/src/main/java/com/aide/plus
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/res/values
+
+        # Create AndroidManifest.xml
+        echo '<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.AppCompat.Light">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>' > app/src/main/AndroidManifest.xml
+
+        # Create MainActivity.java
+        echo 'package com.aide.plus;
+
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+}' > app/src/main/java/com/aide/plus/MainActivity.java
+
+        # Create activity_main.xml
+        echo '<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:layout_gravity="center"/>
+</LinearLayout>' > app/src/main/res/layout/activity_main.xml
+
+        # Create strings.xml
+        echo '<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AIDE Plus</string>
+</resources>' > app/src/main/res/values/strings.xml
+
     - name: Build APK
       run: |
         echo "Starting build with debug info..."
-        ./gradlew assembleDebug --info --stacktrace || true
+        ./gradlew assembleDebug --info --stacktrace
         
         echo "Checking build outputs..."
         find . -type f -name "*.apk" -ls
