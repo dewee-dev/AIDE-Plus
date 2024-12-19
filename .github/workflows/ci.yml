@@ -82,34 +82,38 @@ jobs:
     - name: Build Project
       run: |
         echo "Starting build process..."
+        echo "Checking project structure..."
+        find . -type f -name "build.gradle" -o -name "*.gradle"
         
-        # 构建所有APK变体
+        # 检查主模块
+        MAIN_MODULE=""
         if [ -f "app/build.gradle" ]; then
-          echo "Building app module..."
-          # Debug APK
-          ./gradlew :app:assembleDebug --warning-mode all --info --stacktrace || true
-          # Release APK
-          ./gradlew :app:assembleRelease --warning-mode all --info --stacktrace || true
-          # AP文件
-          ./gradlew :app:packageReleaseAp --warning-mode all --info --stacktrace || true
-          # 显示构建输出目录
-          echo "Build outputs for app module:"
-          find app/build/outputs -type f
+          MAIN_MODULE="app"
+        elif [ -f "AIDE-Plus/build.gradle" ]; then
+          MAIN_MODULE="AIDE-Plus"
+        elif [ -f "aide-plus/build.gradle" ]; then
+          MAIN_MODULE="aide-plus"
         fi
         
-        if [ -f "app_rewrite/build.gradle" ]; then
-          echo "Building app_rewrite module..."
+        if [ ! -z "$MAIN_MODULE" ]; then
+          echo "Building module: $MAIN_MODULE"
           # Debug APK
-          ./gradlew :app_rewrite:assembleDebug --warning-mode all --info --stacktrace || true
+          ./gradlew :$MAIN_MODULE:assembleDebug --warning-mode all --info --stacktrace || true
           # Release APK
-          ./gradlew :app_rewrite:assembleRelease --warning-mode all --info --stacktrace || true
+          ./gradlew :$MAIN_MODULE:assembleRelease --warning-mode all --info --stacktrace || true
           # AP文件
-          ./gradlew :app_rewrite:packageReleaseAp --warning-mode all --info --stacktrace || true
+          ./gradlew :$MAIN_MODULE:packageReleaseAp --warning-mode all --info --stacktrace || true
           # 显示构建输出目录
-          echo "Build outputs for app_rewrite module:"
-          find app_rewrite/build/outputs -type f
+          echo "Build outputs for $MAIN_MODULE module:"
+          find $MAIN_MODULE/build/outputs -type f || true
+        else
+          echo "No main module found, trying root project build..."
+          ./gradlew assembleDebug --warning-mode all --info --stacktrace || true
+          ./gradlew assembleRelease --warning-mode all --info --stacktrace || true
+          echo "Build outputs in root project:"
+          find . -name "*.apk" -o -name "*.apk_" -o -name "*.apk"
         fi
-      
+
     - name: Run Tests
       if: always()
       continue-on-error: true
@@ -160,11 +164,13 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: ap-files
+        name: apk-files
         path: |
-          */build/outputs/ap/release/*.ap
-          */build/intermediates/ap/release/*.ap
-          */build/intermediates/processed_res/release/*.ap
+          # 所有可能的APk文件位置
+          **/build/outputs/ap/**/*.apk
+          **/build/intermediates/ap/**/*.apk
+          **/build/intermediates/processed_res/**/*.apk
+          **/build/**/*.apk_
         if-no-files-found: warn
         
     - name: Upload APK Files
@@ -173,18 +179,16 @@ jobs:
       with:
         name: apk-files
         path: |
-          # Debug APKs
-          */build/outputs/apk/debug/*.apk
-          # Release APKs
-          */build/outputs/apk/release/*.apk
-          # Unsigned APKs
-          */build/outputs/apk/*/*.apk
+          # 所有可能的APK位置
+          **/build/outputs/apk/**/*.apk
+          **/build/**/outputs/apk/**/*.apk
+          **/*/build/outputs/apk/**/*.apk
           # 映射文件
-          */build/outputs/mapping/*/*.txt
+          **/build/outputs/mapping/**/*.txt
           # 资源文件
-          */build/outputs/resources/*/*.txt
+          **/build/outputs/resources/**/*.txt
           # 日志文件
-          */build/outputs/logs/*.log
+          **/build/outputs/logs/*.log
         if-no-files-found: warn
         
     - name: Upload Native Libraries
