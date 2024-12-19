@@ -5,7 +5,6 @@ on:
     branches: [ master, 2.3 ]
   pull_request:
     branches: [ master, 2.3 ]
-  workflow_dispatch:
 
 jobs:
   build:
@@ -43,29 +42,52 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    # 添加 Gradle Wrapper
+    - name: Setup Gradle Wrapper
+      run: |
+        gradle wrapper
+        chmod +x gradlew
       
     - name: Build with Gradle
-      run: ./gradlew assembleDebug
+      run: |
+        if [ -f "build.gradle" ]; then
+          ./gradlew assembleDebug
+        elif [ -f "app_rewrite/build.gradle" ]; then
+          cd app_rewrite
+          ../gradlew assembleDebug
+        fi
       
     - name: Run Tests
-      run: ./gradlew test
+      run: |
+        if [ -f "build.gradle" ]; then
+          ./gradlew test
+        elif [ -f "app_rewrite/build.gradle" ]; then
+          cd app_rewrite
+          ../gradlew test
+        fi
       
     - name: Build Native Libraries
       run: |
-        cd native/EnsureCapacity
-        cmake .
-        make
+        if [ -d "native/EnsureCapacity" ]; then
+          cd native/EnsureCapacity
+          cmake .
+          make
+        fi
         
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
         name: app-debug
-        path: app_rewrite/build/outputs/apk/debug/*.apk
+        path: |
+          app_rewrite/build/outputs/apk/debug/*.apk
+          */build/outputs/apk/debug/*.apk
+        if-no-files-found: warn
         
     - name: Upload Native Libraries
       uses: actions/upload-artifact@v3
       with:
         name: native-libs
-        path: native/EnsureCapacity/build/*.so
+        path: |
+          native/EnsureCapacity/build/*.so
+          */build/*.so
+        if-no-files-found: warn
