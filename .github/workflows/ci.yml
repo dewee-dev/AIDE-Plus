@@ -59,11 +59,18 @@ jobs:
           cat gradle.properties
         fi
         
-        # 如果没有gradle wrapper，创建一个
+        # 下载并安装Gradle
+        wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
+        unzip gradle-7.3.3-bin.zip
+        export PATH=$PATH:$PWD/gradle-7.3.3/bin
+        
+        # 如果没有gradle wrapper，直接生成一个
         if [ ! -f "gradlew" ]; then
           echo "Creating Gradle Wrapper..."
-          gradle init --type basic --dsl groovy --project-name AIDE-Plus
           gradle wrapper --gradle-version 7.3.3
+          chmod +x gradlew
+        else
+          echo "Using existing Gradle Wrapper"
           chmod +x gradlew
         fi
         
@@ -100,10 +107,39 @@ jobs:
       if: always()
       continue-on-error: true
       run: |
+        echo "Checking native directory structure..."
+        if [ -d "native" ]; then
+          echo "Native directory contents:"
+          ls -la native/
+        fi
+        
         if [ -d "native/EnsureCapacity" ]; then
-          cd native/EnsureCapacity
-          cmake .
-          make
+          echo "EnsureCapacity directory contents:"
+          ls -la native/EnsureCapacity/
+          
+          if [ -f "native/EnsureCapacity/CMakeLists.txt" ]; then
+            echo "Building native library..."
+            cd native/EnsureCapacity
+            cmake .
+            make
+          else
+            echo "No CMakeLists.txt found in native/EnsureCapacity"
+            echo "Searching for CMakeLists.txt files:"
+            find . -name "CMakeLists.txt"
+            
+            # Try to find the correct native directory
+            NATIVE_DIR=$(find . -name "CMakeLists.txt" -exec dirname {} \; | head -n 1)
+            if [ ! -z "$NATIVE_DIR" ]; then
+              echo "Found CMakeLists.txt in $NATIVE_DIR"
+              cd "$NATIVE_DIR"
+              cmake .
+              make
+            fi
+          fi
+        else
+          echo "Native directory structure not found"
+          echo "Current directory structure:"
+          find . -type d
         fi
         
     - name: Upload APK
