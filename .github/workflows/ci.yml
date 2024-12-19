@@ -39,129 +39,73 @@ jobs:
 
     - name: Setup Gradle
       run: |
-        # 创建local.properties
         echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-        
-        # 下载并安装Gradle 9.0
         wget https://services.gradle.org/distributions/gradle-9.0-bin.zip
         unzip gradle-9.0-bin.zip
         export PATH=$PATH:$PWD/gradle-9.0/bin
-        
-        # 生成Gradle Wrapper
         gradle wrapper --gradle-version 9.0
         chmod +x gradlew
 
-    - name: Debug Project Structure
+    - name: Create Build Files
       run: |
-        echo "Project root contents:"
-        ls -la
-        
-        echo "\nGradle files:"
-        find . -name "*.gradle" -type f -exec sh -c 'echo "=== {} ==="; cat "{}"' \;
-        
-        echo "\nLocal properties:"
-        cat local.properties || echo "No local.properties found"
-        
-        echo "\nAndroid SDK location:"
-        echo $ANDROID_SDK_ROOT
-        ls -la $ANDROID_SDK_ROOT/platforms
-        ls -la $ANDROID_SDK_ROOT/build-tools
+        # Create root build.gradle
+        echo 'buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath "com.android.tools.build:gradle:8.1.0"
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }' > build.gradle
+
+        # Create app/build.gradle
+        mkdir -p app
+        echo 'plugins {
+            id "com.android.application"
+        }
+        android {
+            namespace "com.aide.plus"
+            compileSdk 33
+            defaultConfig {
+                applicationId "com.aide.plus"
+                minSdk 21
+                targetSdk 33
+                versionCode 1
+                versionName "1.0"
+            }
+            buildTypes {
+                release {
+                    minifyEnabled false
+                    proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                }
+            }
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+        }
+        dependencies {
+            implementation "androidx.appcompat:appcompat:1.6.1"
+        }' > app/build.gradle
+
+        # Create settings.gradle
+        echo 'include ":app"
+        rootProject.name = "AIDE-Plus"' > settings.gradle
 
     - name: Build APK
       run: |
-        # 检查项目结构
-        echo "Project structure:"
-        ls -R
+        echo "Starting build with debug info..."
+        ./gradlew assembleDebug --info --stacktrace || true
         
-        # 检查并更新build.gradle文件
-        if [ -f "build.gradle" ]; then
-          # 更新为Gradle 9.0兼容的配置
-          cat > build.gradle << 'EOL'
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.0'
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-EOL
-        fi
-        
-        if [ -f "app/build.gradle" ]; then
-          # 更新为新的Android Gradle插件语法
-          cat > app/build.gradle << 'EOL'
-plugins {
-    id 'com.android.application'
-}
-
-android {
-    namespace 'com.aide.plus'
-    compileSdk 33
-    
-    defaultConfig {
-        applicationId "com.aide.plus"
-        minSdk 21
-        targetSdk 33
-        versionCode 1
-        versionName "1.0"
-    }
-    
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-    
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-}
-
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-}
-EOL
-        fi
-        
-        if [ -f "settings.gradle" ]; then
-          # 更新settings.gradle
-          echo "include ':app'" > settings.gradle
-          echo "rootProject.name = 'AIDE-Plus'" >> settings.gradle
-        fi
-        
-        # 显示更新后的文件
-        echo "Updated build.gradle:"
-        cat build.gradle
-        echo "Updated app/build.gradle:"
-        cat app/build.gradle
-        echo "Updated settings.gradle:"
-        cat settings.gradle
-        
-        # 尝试构建
-        echo "Starting build with full debug info..."
-        ./gradlew assembleDebug --debug --stacktrace || true
-        
-        # 检查构建输出
         echo "Checking build outputs..."
-        if [ -d "app/build" ]; then
-          echo "App build directory contents:"
-          ls -R app/build
-        fi
-        
-        # 查找APK
-        echo "Looking for APK files..."
-        find . -name "*.apk" -type f -ls
+        find . -type f -name "*.apk" -ls
 
     - name: Upload Build Artifacts
       if: always()
