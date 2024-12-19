@@ -97,7 +97,7 @@ jobs:
         
         # 显示所有gradle文件内容
         echo "Gradle files content:"
-        for f in $(find . -name "*.gradle"); do
+        for f in $(find . -type f -name "*.gradle"); do
           echo "=== $f ==="
           cat "$f"
           echo "============"
@@ -112,7 +112,7 @@ jobs:
           MODULE="aide-plus"
         else
           echo "Looking for Android application module..."
-          MODULE=$(find . -name "build.gradle" -exec grep -l "apply plugin: 'com.android.application'" {} \; | head -n1 | xargs dirname | xargs basename)
+          MODULE=$(find . -name "build.gradle" -exec grep -l "apply plugin: 'com.android.application'" {} \; | head -n1 | xargs dirname | xargs basename || echo "")
         fi
         
         if [ ! -z "$MODULE" ]; then
@@ -120,7 +120,7 @@ jobs:
           
           # 显示gradle任务
           echo "Available gradle tasks for $MODULE:"
-          ./gradlew :$MODULE:tasks --all
+          ./gradlew :$MODULE:tasks --all || true
           
           # 尝试构建APK
           echo "Building debug APK..."
@@ -131,26 +131,30 @@ jobs:
           
           # 显示构建产物位置
           echo "Looking for APK files in module: $MODULE"
-          find . -type f -name "*.apk" -ls
+          find . -type f -name "*.apk" -ls || true
           
           # 显示构建目录内容
           echo "Build directory contents:"
-          find . -type f -path "*/build/*" -ls
+          if [ -d "$MODULE/build" ]; then
+            find "$MODULE/build" -type f -ls || true
+          else
+            echo "No build directory found in $MODULE"
+          fi
         else
           echo "No Android application module found. Trying root project..."
           # 显示gradle任务
           echo "Available gradle tasks:"
-          ./gradlew tasks --all
+          ./gradlew tasks --all || true
           
           ./gradlew build --warning-mode all --info --stacktrace || true
           
           # 显示构建产物位置
           echo "Looking for APK files in root project:"
-          find . -type f -name "*.apk" -ls
+          find . -type f -name "*.apk" -ls || true
           
           # 显示构建目录内容
           echo "Build directory contents:"
-          find . -type f -path "*/build/*" -ls
+          find . -type f -path "*/build/*" -ls || true
         fi
 
     - name: Upload Build Artifacts
@@ -164,7 +168,9 @@ jobs:
           # Build outputs
           **/build/**/*
           # Gradle logs
-          .gradle/daemon/*/daemon-*.out.log
+          .gradle/daemon/**/*.out.log
           # Build reports
           **/build/reports/**/*
+          # Gradle files
+          **/*.gradle
         if-no-files-found: warn
