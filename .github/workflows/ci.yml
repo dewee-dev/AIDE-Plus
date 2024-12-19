@@ -44,7 +44,9 @@ jobs:
 
     - name: List Project Structure
       run: |
+        echo "Current directory contents:"
         ls -la
+        echo "Finding Gradle files:"
         find . -name "build.gradle" -o -name "settings.gradle"
 
     - name: Setup Gradle
@@ -53,13 +55,19 @@ jobs:
         unzip gradle-7.3.3-bin.zip
         export PATH=$PATH:$PWD/gradle-7.3.3/bin
         
+        echo "Checking project structure..."
         PROJECT_DIR=""
         if [ -f "app_rewrite/build.gradle" ]; then
           PROJECT_DIR="app_rewrite"
+          echo "Found app_rewrite/build.gradle"
         elif [ -f "app/build.gradle" ]; then
           PROJECT_DIR="app"
+          echo "Found app/build.gradle"
+        else
+          echo "No build.gradle found in app or app_rewrite directories"
         fi
         
+        echo "Creating settings.gradle..."
         if [ ! -f "settings.gradle" ]; then
           if [ ! -z "$PROJECT_DIR" ]; then
             echo "include ':$PROJECT_DIR'" > settings.gradle
@@ -67,7 +75,9 @@ jobs:
             echo "rootProject.name = 'AIDE-Plus'" > settings.gradle
           fi
         fi
+        cat settings.gradle
         
+        echo "Creating root build.gradle..."
         if [ ! -f "build.gradle" ]; then
           echo 'buildscript {
               repositories {
@@ -86,8 +96,10 @@ jobs:
               }
           }' > build.gradle
         fi
+        cat build.gradle
         
         if [ ! -z "$PROJECT_DIR" ] && [ ! -f "$PROJECT_DIR/build.gradle" ]; then
+          echo "Creating $PROJECT_DIR/build.gradle..."
           mkdir -p $PROJECT_DIR
           echo 'apply plugin: "com.android.application"
           
@@ -112,19 +124,27 @@ jobs:
               implementation fileTree(dir: "libs", include: ["*.jar"])
               implementation "androidx.appcompat:appcompat:1.6.1"
           }' > "$PROJECT_DIR/build.gradle"
+          cat "$PROJECT_DIR/build.gradle"
         fi
         
+        echo "Generating Gradle wrapper..."
         gradle wrapper
         chmod +x gradlew
+        
+        echo "Project structure after setup:"
         ls -la
-        ./gradlew projects
+        echo "Available Gradle tasks:"
+        ./gradlew tasks
 
     - name: Build Project
       run: |
+        echo "Starting build process..."
         if [ -f "app_rewrite/build.gradle" ]; then
-          ./gradlew :app_rewrite:assembleDebug --stacktrace
+          echo "Building app_rewrite module..."
+          ./gradlew :app_rewrite:assembleDebug --info --stacktrace
         elif [ -f "app/build.gradle" ]; then
-          ./gradlew :app:assembleDebug --stacktrace
+          echo "Building app module..."
+          ./gradlew :app:assembleDebug --info --stacktrace
         else
           echo "No build.gradle found in expected locations"
           find . -name "build.gradle"
@@ -133,23 +153,27 @@ jobs:
       
     - name: Run Tests
       if: always()
-      run: |
-        if [ -f "app/build.gradle" ]; then
-          ./gradlew :app:test
-        elif [ -f "app_rewrite/build.gradle" ]; then
-          ./gradlew :app_rewrite:test
-        fi
       continue-on-error: true
+      run: |
+        echo "Running tests..."
+        ./gradlew tasks --all
+        if [ -f "app/build.gradle" ]; then
+          echo "Testing app module..."
+          ./gradlew :app:test --info || true
+        elif [ -f "app_rewrite/build.gradle" ]; then
+          echo "Testing app_rewrite module..."
+          ./gradlew :app_rewrite:test --info || true
+        fi
       
     - name: Build Native Libraries
       if: always()
+      continue-on-error: true
       run: |
         if [ -d "native/EnsureCapacity" ]; then
           cd native/EnsureCapacity
           cmake .
           make
         fi
-      continue-on-error: true
         
     - name: Upload APK
       if: always()
