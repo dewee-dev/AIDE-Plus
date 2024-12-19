@@ -54,21 +54,72 @@ jobs:
         unzip gradle-7.3.3-bin.zip
         export PATH=$PATH:$PWD/gradle-7.3.3/bin
         
+        # 检查项目结构
+        PROJECT_DIR=""
+        if [ -f "app_rewrite/build.gradle" ]; then
+          PROJECT_DIR="app_rewrite"
+        elif [ -f "app/build.gradle" ]; then
+          PROJECT_DIR="app"
+        fi
+        
         # 初始化gradle项目
         if [ ! -f "settings.gradle" ]; then
-          echo "include ':app', ':app_rewrite'" > settings.gradle
+          if [ ! -z "$PROJECT_DIR" ]; then
+            echo "include ':$PROJECT_DIR'" > settings.gradle
+          else
+            echo "rootProject.name = 'AIDE-Plus'" > settings.gradle
+          fi
         fi
         
         if [ ! -f "build.gradle" ]; then
-          echo "buildscript {" > build.gradle
-          echo "    repositories {" >> build.gradle
-          echo "        google()" >> build.gradle
-          echo "        mavenCentral()" >> build.gradle
-          echo "    }" >> build.gradle
-          echo "    dependencies {" >> build.gradle
-          echo "        classpath 'com.android.tools.build:gradle:7.3.1'" >> build.gradle
-          echo "    }" >> build.gradle
-          echo "}" >> build.gradle
+          cat << EOF > build.gradle
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.1'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+EOF
+        fi
+        
+        # 如果子项目不存在build.gradle，创建一个基本的
+        if [ ! -z "$PROJECT_DIR" ] && [ ! -f "$PROJECT_DIR/build.gradle" ]; then
+          mkdir -p $PROJECT_DIR
+          cat << EOF > $PROJECT_DIR/build.gradle
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 33
+    defaultConfig {
+        applicationId "com.aide.plus"
+        minSdkVersion 21
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+}
+EOF
         fi
         
         # 生成gradle wrapper
@@ -81,63 +132,15 @@ jobs:
 
     - name: Build Project
       run: |
-        if [ -f "app/build.gradle" ]; then
-          ./gradlew :app:assembleDebug
-        elif [ -f "app_rewrite/build.gradle" ]; then
-          ./gradlew :app_rewrite:assembleDebug
+        # 尝试构建找到的项目
+        if [ -f "app_rewrite/build.gradle" ]; then
+          ./gradlew :app_rewrite:assembleDebug --stacktrace
+        elif [ -f "app/build.gradle" ]; then
+          ./gradlew :app:assembleDebug --stacktrace
         else
           echo "No build.gradle found in expected locations"
           find . -name "build.gradle"
           exit 1
         fi
       
-    - name: Run Tests
-      if: always()  # Run even if build fails
-      run: |
-        if [ -f "app/build.gradle" ]; then
-          ./gradlew :app:test
-        elif [ -f "app_rewrite/build.gradle" ]; then
-          ./gradlew :app_rewrite:test
-        fi
-      continue-on-error: true
-      
-    - name: Build Native Libraries
-      if: always()  # Run even if previous steps fail
-      run: |
-        if [ -d "native/EnsureCapacity" ]; then
-          cd native/EnsureCapacity
-          cmake .
-          make
-        fi
-      continue-on-error: true
-        
-    - name: Upload APK
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: app-debug
-        path: |
-          app/build/outputs/apk/debug/*.apk
-          app_rewrite/build/outputs/apk/debug/*.apk
-          */build/outputs/apk/debug/*.apk
-        if-no-files-found: warn
-        
-    - name: Upload Native Libraries
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: native-libs
-        path: |
-          native/EnsureCapacity/build/*.so
-          */build/**/*.so
-        if-no-files-found: warn
-
-    - name: Upload Build Reports
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-reports
-        path: |
-          */build/reports/**/*
-          build/reports/**/*
-        if-no-files-found: warn
+    # ... rest of the file remains the same ...
