@@ -82,17 +82,32 @@ jobs:
     - name: Build Project
       run: |
         echo "Starting build process..."
-        # 尝试直接构建AP文件
+        
+        # 构建所有APK变体
         if [ -f "app/build.gradle" ]; then
           echo "Building app module..."
+          # Debug APK
+          ./gradlew :app:assembleDebug --warning-mode all --info --stacktrace || true
+          # Release APK
           ./gradlew :app:assembleRelease --warning-mode all --info --stacktrace || true
+          # AP文件
           ./gradlew :app:packageReleaseAp --warning-mode all --info --stacktrace || true
+          # 显示构建输出目录
+          echo "Build outputs for app module:"
+          find app/build/outputs -type f
         fi
         
         if [ -f "app_rewrite/build.gradle" ]; then
           echo "Building app_rewrite module..."
+          # Debug APK
+          ./gradlew :app_rewrite:assembleDebug --warning-mode all --info --stacktrace || true
+          # Release APK
           ./gradlew :app_rewrite:assembleRelease --warning-mode all --info --stacktrace || true
+          # AP文件
           ./gradlew :app_rewrite:packageReleaseAp --warning-mode all --info --stacktrace || true
+          # 显示构建输出目录
+          echo "Build outputs for app_rewrite module:"
+          find app_rewrite/build/outputs -type f
         fi
       
     - name: Run Tests
@@ -158,8 +173,18 @@ jobs:
       with:
         name: apk-files
         path: |
-          */build/outputs/apk/release/*.apk
+          # Debug APKs
           */build/outputs/apk/debug/*.apk
+          # Release APKs
+          */build/outputs/apk/release/*.apk
+          # Unsigned APKs
+          */build/outputs/apk/*/*.apk
+          # 映射文件
+          */build/outputs/mapping/*/*.txt
+          # 资源文件
+          */build/outputs/resources/*/*.txt
+          # 日志文件
+          */build/outputs/logs/*.log
         if-no-files-found: warn
         
     - name: Upload Native Libraries
