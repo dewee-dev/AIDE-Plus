@@ -23,8 +23,11 @@ jobs:
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
       with:
-        sdk-platform: '33'
-        build-tools: '33.0.0'
+        packages: 'platforms;android-33;build-tools-33.0.0'
+
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | sdkmanager --licenses
         
     - name: Setup Gradle
       run: |
@@ -94,38 +97,45 @@ jobs:
           
           echo "Building release APK..."
           ./gradlew :$MODULE:assembleRelease --warning-mode all --stacktrace || true
+          
+          # 显示构建产物位置
+          echo "Looking for APK files in module: $MODULE"
+          find . -name "*.apk" -ls
         else
           echo "No Android application module found. Trying root project..."
           ./gradlew build --warning-mode all --stacktrace || true
+          
+          # 显示构建产物位置
+          echo "Looking for APK files in root project:"
+          find . -name "*.apk" -ls
         fi
-        
-        # 显示构建产物
-        echo "Build outputs:"
-        find . -name "*.apk"
 
     - name: Upload Debug APK
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: debug-apk
         path: |
           **/build/outputs/apk/debug/*.apk
+          **/*/build/outputs/apk/debug/*.apk
         if-no-files-found: warn
         
     - name: Upload Release APK
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-apk
         path: |
           **/build/outputs/apk/release/*.apk
+          **/*/build/outputs/apk/release/*.apk
         if-no-files-found: warn
 
     - name: Upload Build Reports
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-reports
         path: |
           **/build/reports/**/*
+          **/*/build/reports/**/*
         if-no-files-found: warn
