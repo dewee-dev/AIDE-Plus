@@ -49,14 +49,36 @@ jobs:
 
     - name: Setup Gradle
       run: |
-        if [ -f "gradlew" ]; then
-          chmod +x gradlew
-        else
-          gradle init
-          gradle wrapper
-          chmod +x gradlew
+        # 安装gradle
+        wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
+        unzip gradle-7.3.3-bin.zip
+        export PATH=$PATH:$PWD/gradle-7.3.3/bin
+        
+        # 初始化gradle项目
+        if [ ! -f "settings.gradle" ]; then
+          echo "include ':app', ':app_rewrite'" > settings.gradle
         fi
-      
+        
+        if [ ! -f "build.gradle" ]; then
+          echo "buildscript {" > build.gradle
+          echo "    repositories {" >> build.gradle
+          echo "        google()" >> build.gradle
+          echo "        mavenCentral()" >> build.gradle
+          echo "    }" >> build.gradle
+          echo "    dependencies {" >> build.gradle
+          echo "        classpath 'com.android.tools.build:gradle:7.3.1'" >> build.gradle
+          echo "    }" >> build.gradle
+          echo "}" >> build.gradle
+        fi
+        
+        # 生成gradle wrapper
+        gradle wrapper
+        chmod +x gradlew
+        
+        # 显示项目结构
+        ls -la
+        ./gradlew projects
+
     - name: Build Project
       run: |
         if [ -f "app/build.gradle" ]; then
