@@ -29,14 +29,14 @@ jobs:
     - name: Setup Gradle
       run: |
         # 下载并安装Gradle
-        wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
-        unzip gradle-7.3.3-bin.zip
-        export PATH=$PATH:$PWD/gradle-7.3.3/bin
+        wget https://services.gradle.org/distributions/gradle-8.4-bin.zip
+        unzip gradle-8.4-bin.zip
+        export PATH=$PATH:$PWD/gradle-8.4/bin
         
         # 生成Gradle Wrapper
-        gradle wrapper
+        gradle wrapper --gradle-version 8.4
         chmod +x gradlew
-        ./gradlew --version
+        ./gradlew --version --warning-mode all
 
     - name: Build APK
       run: |
@@ -58,10 +58,10 @@ jobs:
         
         # 尝试构建APK
         echo "Building debug APK..."
-        ./gradlew assembleDebug --stacktrace
+        ./gradlew assembleDebug --warning-mode all --stacktrace
         
         echo "Building release APK..."
-        ./gradlew assembleRelease --stacktrace
+        ./gradlew assembleRelease --warning-mode all --stacktrace
         
         # 显示构建产物
         echo "Build outputs:"
