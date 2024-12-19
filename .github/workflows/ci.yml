@@ -20,184 +20,62 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Set up NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r25c
-        local-cache: true
-
-    - name: Setup Android SDK
+    - name: Set up Android SDK
       uses: android-actions/setup-android@v3
-      
-    - name: Install CMake
-      uses: lukka/get-cmake@latest
-
-    - name: List Project Structure
-      run: |
-        echo "Current directory contents:"
-        ls -la
-        echo "Finding Gradle files:"
-        find . -name "build.gradle" -o -name "settings.gradle"
-        echo "Project structure:"
-        tree -a || true
-
+      with:
+        sdk-platform: '33'
+        build-tools: '33.0.0'
+        
     - name: Setup Gradle
       run: |
-        # 检查现有的Gradle文件
+        chmod +x gradlew
+        ./gradlew --version
+
+    - name: Build APK
+      run: |
+        echo "Starting APK build process..."
+        # 显示项目结构
+        ls -la
+        
+        # 检查并显示build.gradle内容
         if [ -f "build.gradle" ]; then
-          echo "Using existing build.gradle"
+          echo "Root build.gradle contents:"
           cat build.gradle
         fi
         
-        if [ -f "settings.gradle" ]; then
-          echo "Using existing settings.gradle"
-          cat settings.gradle
-        fi
-        
-        if [ -f "gradle.properties" ]; then
-          echo "Using existing gradle.properties"
-          cat gradle.properties
-        fi
-        
-        # 下载并安装Gradle
-        wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
-        unzip gradle-7.3.3-bin.zip
-        export PATH=$PATH:$PWD/gradle-7.3.3/bin
-        
-        # 如果没有gradle wrapper，直接生成一个
-        if [ ! -f "gradlew" ]; then
-          echo "Creating Gradle Wrapper..."
-          gradle wrapper --gradle-version 7.3.3
-          chmod +x gradlew
-        else
-          echo "Using existing Gradle Wrapper"
-          chmod +x gradlew
-        fi
-        
-        echo "Project structure after setup:"
-        ls -la
-        echo "Available Gradle tasks:"
-        ./gradlew tasks --warning-mode all || true
-
-    - name: Build Project
-      run: |
-        echo "Starting build process..."
-        echo "Checking project structure..."
-        find . -type f -name "build.gradle" -o -name "*.gradle"
-        
-        # 检查主模块
-        MAIN_MODULE=""
+        # 检查并显示app/build.gradle内容
         if [ -f "app/build.gradle" ]; then
-          MAIN_MODULE="app"
-        elif [ -f "AIDE-Plus/build.gradle" ]; then
-          MAIN_MODULE="AIDE-Plus"
-        elif [ -f "aide-plus/build.gradle" ]; then
-          MAIN_MODULE="aide-plus"
+          echo "App build.gradle contents:"
+          cat app/build.gradle
         fi
         
-        if [ ! -z "$MAIN_MODULE" ]; then
-          echo "Building module: $MAIN_MODULE"
-          # Debug APK
-          ./gradlew :$MAIN_MODULE:assembleDebug --warning-mode all --info --stacktrace || true
-          # Release APK
-          ./gradlew :$MAIN_MODULE:assembleRelease --warning-mode all --info --stacktrace || true
-          # AP文件
-          ./gradlew :$MAIN_MODULE:packageReleaseAp --warning-mode all --info --stacktrace || true
-          # 显示构建输出目录
-          echo "Build outputs for $MAIN_MODULE module:"
-          find $MAIN_MODULE/build/outputs -type f || true
-        else
-          echo "No main module found, trying root project build..."
-          ./gradlew assembleDebug --warning-mode all --info --stacktrace || true
-          ./gradlew assembleRelease --warning-mode all --info --stacktrace || true
-          echo "Build outputs in root project:"
-          find . -name "*.apk" -o -name "*.apk_" -o -name "*.apk"
-        fi
+        # 尝试构建APK
+        echo "Building debug APK..."
+        ./gradlew assembleDebug --stacktrace
+        
+        echo "Building release APK..."
+        ./gradlew assembleRelease --stacktrace
+        
+        # 显示构建产物
+        echo "Build outputs:"
+        find . -name "*.apk"
 
-    - name: Run Tests
-      if: always()
-      continue-on-error: true
-      run: |
-        echo "Running tests..."
-        ./gradlew test --warning-mode all --info || true
-      
-    - name: Build Native Libraries
-      if: always()
-      continue-on-error: true
-      run: |
-        echo "Checking native directory structure..."
-        if [ -d "native" ]; then
-          echo "Native directory contents:"
-          ls -la native/
-        fi
-        
-        if [ -d "native/EnsureCapacity" ]; then
-          echo "EnsureCapacity directory contents:"
-          ls -la native/EnsureCapacity/
-          
-          if [ -f "native/EnsureCapacity/CMakeLists.txt" ]; then
-            echo "Building native library..."
-            cd native/EnsureCapacity
-            cmake .
-            make
-          else
-            echo "No CMakeLists.txt found in native/EnsureCapacity"
-            echo "Searching for CMakeLists.txt files:"
-            find . -name "CMakeLists.txt"
-            
-            # Try to find the correct native directory
-            NATIVE_DIR=$(find . -name "CMakeLists.txt" -exec dirname {} \; | head -n 1)
-            if [ ! -z "$NATIVE_DIR" ]; then
-              echo "Found CMakeLists.txt in $NATIVE_DIR"
-              cd "$NATIVE_DIR"
-              cmake .
-              make
-            fi
-          fi
-        else
-          echo "Native directory structure not found"
-          echo "Current directory structure:"
-          find . -type d
-        fi
-        
-    - name: Upload AP Files
-      if: always()
+    - name: Upload Debug APK
       uses: actions/upload-artifact@v3
       with:
-        name: apk-files
+        name: debug-apk
         path: |
-          # 所有可能的APk文件位置
-          **/build/outputs/ap/**/*.apk
-          **/build/intermediates/ap/**/*.apk
-          **/build/intermediates/processed_res/**/*.apk
-          **/build/**/*.apk_
+          app/build/outputs/apk/debug/*.apk
+          */build/outputs/apk/debug/*.apk
         if-no-files-found: warn
         
-    - name: Upload APK Files
-      if: always()
+    - name: Upload Release APK
       uses: actions/upload-artifact@v3
       with:
-        name: apk-files
+        name: release-apk
         path: |
-          # 所有可能的APK位置
-          **/build/outputs/apk/**/*.apk
-          **/build/**/outputs/apk/**/*.apk
-          **/*/build/outputs/apk/**/*.apk
-          # 映射文件
-          **/build/outputs/mapping/**/*.txt
-          # 资源文件
-          **/build/outputs/resources/**/*.txt
-          # 日志文件
-          **/build/outputs/logs/*.log
-        if-no-files-found: warn
-        
-    - name: Upload Native Libraries
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: native-libs
-        path: |
-          */build/**/*.so
+          app/build/outputs/apk/release/*.apk
+          */build/outputs/apk/release/*.apk
         if-no-files-found: warn
 
     - name: Upload Build Reports
@@ -206,6 +84,6 @@ jobs:
       with:
         name: build-reports
         path: |
+          app/build/reports/**/*
           */build/reports/**/*
-          build/reports/**/*
         if-no-files-found: warn
