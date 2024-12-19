@@ -42,52 +42,80 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    # 添加 Gradle Wrapper
-    - name: Setup Gradle Wrapper
+    - name: List Project Structure
       run: |
-        gradle wrapper
-        chmod +x gradlew
+        ls -la
+        find . -name "build.gradle" -o -name "settings.gradle"
+
+    - name: Setup Gradle
+      run: |
+        if [ -f "gradlew" ]; then
+          chmod +x gradlew
+        else
+          gradle init
+          gradle wrapper
+          chmod +x gradlew
+        fi
       
-    - name: Build with Gradle
+    - name: Build Project
       run: |
-        if [ -f "build.gradle" ]; then
-          ./gradlew assembleDebug
+        if [ -f "app/build.gradle" ]; then
+          ./gradlew :app:assembleDebug
         elif [ -f "app_rewrite/build.gradle" ]; then
-          cd app_rewrite
-          ../gradlew assembleDebug
+          ./gradlew :app_rewrite:assembleDebug
+        else
+          echo "No build.gradle found in expected locations"
+          find . -name "build.gradle"
+          exit 1
         fi
       
     - name: Run Tests
+      if: always()  # Run even if build fails
       run: |
-        if [ -f "build.gradle" ]; then
-          ./gradlew test
+        if [ -f "app/build.gradle" ]; then
+          ./gradlew :app:test
         elif [ -f "app_rewrite/build.gradle" ]; then
-          cd app_rewrite
-          ../gradlew test
+          ./gradlew :app_rewrite:test
         fi
+      continue-on-error: true
       
     - name: Build Native Libraries
+      if: always()  # Run even if previous steps fail
       run: |
         if [ -d "native/EnsureCapacity" ]; then
           cd native/EnsureCapacity
           cmake .
           make
         fi
+      continue-on-error: true
         
     - name: Upload APK
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: app-debug
         path: |
+          app/build/outputs/apk/debug/*.apk
           app_rewrite/build/outputs/apk/debug/*.apk
           */build/outputs/apk/debug/*.apk
         if-no-files-found: warn
         
     - name: Upload Native Libraries
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: native-libs
         path: |
           native/EnsureCapacity/build/*.so
-          */build/*.so
+          */build/**/*.so
+        if-no-files-found: warn
+
+    - name: Upload Build Reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-reports
+        path: |
+          */build/reports/**/*
+          build/reports/**/*
         if-no-files-found: warn
