@@ -22,13 +22,23 @@ jobs:
 
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
-      with:
-        packages: 'platforms;android-33;build-tools-33.0.0'
 
-    - name: Accept Android SDK Licenses
+    - name: Install Android SDK Components
       run: |
+        echo "Installing Android SDK components..."
         yes | sdkmanager --licenses
+        sdkmanager --list
+        sdkmanager \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;33.0.0" \
+          "extras;android;m2repository" \
+          "extras;google;m2repository"
         
+        # 验证安装
+        echo "Installed packages:"
+        sdkmanager --list_installed
+
     - name: Setup Gradle
       run: |
         # 下载并安装Gradle
