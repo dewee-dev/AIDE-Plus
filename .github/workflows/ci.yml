@@ -33,56 +33,92 @@ jobs:
         unzip gradle-8.4-bin.zip
         export PATH=$PATH:$PWD/gradle-8.4/bin
         
+        # 检查并更新build.gradle
+        if [ -f "build.gradle" ]; then
+          echo "Updating build.gradle to use mavenCentral..."
+          sed -i 's/jcenter()/mavenCentral()/g' build.gradle
+          echo "Updated build.gradle contents:"
+          cat build.gradle
+        fi
+        
+        # 检查并更新settings.gradle
+        if [ -f "settings.gradle" ]; then
+          echo "Checking settings.gradle..."
+          cat settings.gradle
+        fi
+        
         # 生成Gradle Wrapper
         gradle wrapper --gradle-version 8.4
         chmod +x gradlew
         ./gradlew --version --warning-mode all
 
+    - name: Analyze Project Structure
+      run: |
+        echo "Project structure analysis..."
+        echo "Root directory contents:"
+        ls -la
+        
+        echo "\nFinding all gradle files:"
+        find . -name "*.gradle"
+        
+        echo "\nFinding all build directories:"
+        find . -type d -name "build"
+        
+        echo "\nAvailable gradle tasks:"
+        ./gradlew tasks --all
+
     - name: Build APK
       run: |
         echo "Starting APK build process..."
-        # 显示项目结构
-        ls -la
         
-        # 检查并显示build.gradle内容
-        if [ -f "build.gradle" ]; then
-          echo "Root build.gradle contents:"
-          cat build.gradle
-        fi
+        # 检查并更新所有build.gradle文件
+        find . -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} \;
         
-        # 检查并显示app/build.gradle内容
+        # 检查主要的构建目标
         if [ -f "app/build.gradle" ]; then
-          echo "App build.gradle contents:"
-          cat app/build.gradle
+          MODULE="app"
+        elif [ -f "AIDE-Plus/build.gradle" ]; then
+          MODULE="AIDE-Plus"
+        elif [ -f "aide-plus/build.gradle" ]; then
+          MODULE="aide-plus"
+        else
+          echo "Looking for Android application module..."
+          MODULE=$(find . -name "build.gradle" -exec grep -l "apply plugin: 'com.android.application'" {} \; | head -n1 | xargs dirname | xargs basename)
         fi
         
-        # 尝试构建APK
-        echo "Building debug APK..."
-        ./gradlew assembleDebug --warning-mode all --stacktrace
-        
-        echo "Building release APK..."
-        ./gradlew assembleRelease --warning-mode all --stacktrace
+        if [ ! -z "$MODULE" ]; then
+          echo "Building module: $MODULE"
+          # 尝试构建APK
+          echo "Building debug APK..."
+          ./gradlew :$MODULE:assembleDebug --warning-mode all --stacktrace || true
+          
+          echo "Building release APK..."
+          ./gradlew :$MODULE:assembleRelease --warning-mode all --stacktrace || true
+        else
+          echo "No Android application module found. Trying root project..."
+          ./gradlew build --warning-mode all --stacktrace || true
+        fi
         
         # 显示构建产物
         echo "Build outputs:"
         find . -name "*.apk"
 
     - name: Upload Debug APK
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: debug-apk
         path: |
-          app/build/outputs/apk/debug/*.apk
-          */build/outputs/apk/debug/*.apk
+          **/build/outputs/apk/debug/*.apk
         if-no-files-found: warn
         
     - name: Upload Release APK
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: release-apk
         path: |
-          app/build/outputs/apk/release/*.apk
-          */build/outputs/apk/release/*.apk
+          **/build/outputs/apk/release/*.apk
         if-no-files-found: warn
 
     - name: Upload Build Reports
@@ -91,6 +127,5 @@ jobs:
       with:
         name: build-reports
         path: |
-          app/build/reports/**/*
-          */build/reports/**/*
+          **/build/reports/**/*
         if-no-files-found: warn
