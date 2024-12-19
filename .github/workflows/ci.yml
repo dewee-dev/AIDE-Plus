@@ -51,9 +51,9 @@ jobs:
 
     - name: Setup Gradle
       run: |
-        wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
-        unzip gradle-7.3.3-bin.zip
-        export PATH=$PATH:$PWD/gradle-7.3.3/bin
+        wget https://services.gradle.org/distributions/gradle-8.0-bin.zip
+        unzip gradle-8.0-bin.zip
+        export PATH=$PATH:$PWD/gradle-8.0/bin
         
         echo "Checking project structure..."
         PROJECT_DIR=""
@@ -71,6 +71,7 @@ jobs:
         if [ ! -f "settings.gradle" ]; then
           if [ ! -z "$PROJECT_DIR" ]; then
             echo "include ':$PROJECT_DIR'" > settings.gradle
+            echo "rootProject.name = 'AIDE-Plus'" >> settings.gradle
           else
             echo "rootProject.name = 'AIDE-Plus'" > settings.gradle
           fi
@@ -85,7 +86,7 @@ jobs:
                   mavenCentral()
               }
               dependencies {
-                  classpath "com.android.tools.build:gradle:7.3.1"
+                  classpath "com.android.tools.build:gradle:8.0.0"
               }
           }
           
@@ -94,6 +95,10 @@ jobs:
                   google()
                   mavenCentral()
               }
+          }
+          
+          tasks.withType(JavaCompile).configureEach {
+              options.release = 17
           }' > build.gradle
         fi
         cat build.gradle
@@ -101,22 +106,32 @@ jobs:
         if [ ! -z "$PROJECT_DIR" ] && [ ! -f "$PROJECT_DIR/build.gradle" ]; then
           echo "Creating $PROJECT_DIR/build.gradle..."
           mkdir -p $PROJECT_DIR
-          echo 'apply plugin: "com.android.application"
+          echo 'plugins {
+              id "com.android.application"
+          }
           
           android {
-              compileSdkVersion 33
+              namespace "com.aide.plus"
+              compileSdk 33
+              
               defaultConfig {
                   applicationId "com.aide.plus"
-                  minSdkVersion 21
-                  targetSdkVersion 33
+                  minSdk 21
+                  targetSdk 33
                   versionCode 1
                   versionName "1.0"
               }
+              
               buildTypes {
                   release {
                       minifyEnabled false
-                      proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+                      proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
                   }
+              }
+              
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
               }
           }
           
@@ -128,23 +143,23 @@ jobs:
         fi
         
         echo "Generating Gradle wrapper..."
-        gradle wrapper
+        gradle wrapper --gradle-version 8.0
         chmod +x gradlew
         
         echo "Project structure after setup:"
         ls -la
         echo "Available Gradle tasks:"
-        ./gradlew tasks
+        ./gradlew tasks --warning-mode all
 
     - name: Build Project
       run: |
         echo "Starting build process..."
         if [ -f "app_rewrite/build.gradle" ]; then
           echo "Building app_rewrite module..."
-          ./gradlew :app_rewrite:assembleDebug --info --stacktrace
+          ./gradlew :app_rewrite:assembleDebug --warning-mode all --info --stacktrace
         elif [ -f "app/build.gradle" ]; then
           echo "Building app module..."
-          ./gradlew :app:assembleDebug --info --stacktrace
+          ./gradlew :app:assembleDebug --warning-mode all --info --stacktrace
         else
           echo "No build.gradle found in expected locations"
           find . -name "build.gradle"
