@@ -27,7 +27,6 @@ jobs:
       run: |
         echo "Installing Android SDK components..."
         yes | sdkmanager --licenses
-        sdkmanager --list
         sdkmanager \
           "platform-tools" \
           "platforms;android-33" \
@@ -35,127 +34,71 @@ jobs:
           "extras;android;m2repository" \
           "extras;google;m2repository"
         
-        # 验证安装
         echo "Installed packages:"
         sdkmanager --list_installed
 
     - name: Setup Gradle
       run: |
+        # 创建local.properties
+        echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+        
         # 下载并安装Gradle
-        wget https://services.gradle.org/distributions/gradle-8.4-bin.zip
-        unzip gradle-8.4-bin.zip
-        export PATH=$PATH:$PWD/gradle-8.4/bin
-        
-        # 检查并更新build.gradle
-        if [ -f "build.gradle" ]; then
-          echo "Updating build.gradle to use mavenCentral..."
-          sed -i 's/jcenter()/mavenCentral()/g' build.gradle
-          echo "Updated build.gradle contents:"
-          cat build.gradle
-        fi
-        
-        # 检查并更新settings.gradle
-        if [ -f "settings.gradle" ]; then
-          echo "Checking settings.gradle..."
-          cat settings.gradle
-        fi
+        wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
+        unzip gradle-7.3.3-bin.zip
+        export PATH=$PATH:$PWD/gradle-7.3.3/bin
         
         # 生成Gradle Wrapper
-        gradle wrapper --gradle-version 8.4
+        gradle wrapper
         chmod +x gradlew
-        ./gradlew --version --warning-mode all
 
-    - name: Analyze Project Structure
+    - name: Debug Project Structure
       run: |
-        echo "Project structure analysis..."
-        echo "Root directory contents:"
+        echo "Project root contents:"
         ls -la
         
-        echo "\nFinding all gradle files:"
-        find . -name "*.gradle"
+        echo "\nGradle files:"
+        find . -name "*.gradle" -type f -exec sh -c 'echo "=== {} ==="; cat "{}"' \;
         
-        echo "\nFinding all build directories:"
-        find . -type d -name "build"
+        echo "\nLocal properties:"
+        cat local.properties || echo "No local.properties found"
         
-        echo "\nAvailable gradle tasks:"
-        ./gradlew tasks --all
+        echo "\nAndroid SDK location:"
+        echo $ANDROID_SDK_ROOT
+        ls -la $ANDROID_SDK_ROOT/platforms
+        ls -la $ANDROID_SDK_ROOT/build-tools
 
     - name: Build APK
       run: |
-        echo "Starting APK build process..."
+        # 尝试直接构建
+        echo "Attempting direct build..."
+        ./gradlew assembleDebug --info || true
         
-        # 显示当前环境
-        echo "Environment variables:"
-        env
-        
-        echo "Android SDK location:"
-        echo $ANDROID_SDK_ROOT
-        ls -la $ANDROID_SDK_ROOT
-        
-        # 检查并更新所有build.gradle文件
-        find . -name "build.gradle" -exec sed -i 's/jcenter()/mavenCentral()/g' {} \;
-        
-        # 显示所有gradle文件内容
-        echo "Gradle files content:"
-        for f in $(find . -type f -name "*.gradle"); do
-          echo "=== $f ==="
-          cat "$f"
-          echo "============"
-        done
-        
-        # 检查主要的构建目标
-        if [ -f "app/build.gradle" ]; then
-          MODULE="app"
-        elif [ -f "AIDE-Plus/build.gradle" ]; then
-          MODULE="AIDE-Plus"
-        elif [ -f "aide-plus/build.gradle" ]; then
-          MODULE="aide-plus"
-        else
-          echo "Looking for Android application module..."
-          MODULE=$(find . -name "build.gradle" -exec grep -l "apply plugin: 'com.android.application'" {} \; | head -n1 | xargs dirname | xargs basename || echo "")
-        fi
-        
-        if [ ! -z "$MODULE" ]; then
-          echo "Building module: $MODULE"
+        # 如果直接构建失败，尝试查找并构建主模块
+        if [ ! -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
+          echo "Direct build failed, searching for main module..."
           
-          # 显示gradle任务
-          echo "Available gradle tasks for $MODULE:"
-          ./gradlew :$MODULE:tasks --all || true
+          # 查找包含android应用插件的build.gradle文件
+          MAIN_GRADLE=$(find . -type f -name "build.gradle" -exec grep -l "com.android.application" {} \; | head -n 1)
           
-          # 尝试构建APK
-          echo "Building debug APK..."
-          ./gradlew :$MODULE:assembleDebug --warning-mode all --info --stacktrace || true
-          
-          echo "Building release APK..."
-          ./gradlew :$MODULE:assembleRelease --warning-mode all --info --stacktrace || true
-          
-          # 显示构建产物位置
-          echo "Looking for APK files in module: $MODULE"
-          find . -type f -name "*.apk" -ls || true
-          
-          # 显示构建目录内容
-          echo "Build directory contents:"
-          if [ -d "$MODULE/build" ]; then
-            find "$MODULE/build" -type f -ls || true
+          if [ ! -z "$MAIN_GRADLE" ]; then
+            MODULE_DIR=$(dirname "$MAIN_GRADLE")
+            MODULE_NAME=$(basename "$MODULE_DIR")
+            echo "Found main module: $MODULE_NAME in $MODULE_DIR"
+            
+            echo "Building module $MODULE_NAME..."
+            ./gradlew :$MODULE_NAME:assembleDebug --info
+            
+            echo "Build outputs:"
+            find "$MODULE_DIR/build/outputs" -type f -ls || true
           else
-            echo "No build directory found in $MODULE"
+            echo "No Android application module found"
+            echo "All gradle files:"
+            find . -name "*.gradle" -type f -exec echo {} \;
           fi
-        else
-          echo "No Android application module found. Trying root project..."
-          # 显示gradle任务
-          echo "Available gradle tasks:"
-          ./gradlew tasks --all || true
-          
-          ./gradlew build --warning-mode all --info --stacktrace || true
-          
-          # 显示构建产物位置
-          echo "Looking for APK files in root project:"
-          find . -type f -name "*.apk" -ls || true
-          
-          # 显示构建目录内容
-          echo "Build directory contents:"
-          find . -type f -path "*/build/*" -ls || true
         fi
+        
+        echo "Looking for APK files:"
+        find . -name "*.apk" -type f -ls
 
     - name: Upload Build Artifacts
       if: always()
@@ -163,14 +106,9 @@ jobs:
       with:
         name: build-artifacts
         path: |
-          # APK files
-          **/*.apk
-          # Build outputs
-          **/build/**/*
-          # Gradle logs
-          .gradle/daemon/**/*.out.log
-          # Build reports
-          **/build/reports/**/*
-          # Gradle files
+          **/build/outputs/apk/**/*.apk
+          **/build/reports/**
+          **/build/outputs/**
           **/*.gradle
+          local.properties
         if-no-files-found: warn
