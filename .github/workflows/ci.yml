@@ -48,6 +48,13 @@ jobs:
 
     - name: Create Build Files
       run: |
+        # Create gradle.properties
+        cat << 'END_OF_FILE' > gradle.properties
+        android.useAndroidX=true
+        android.enableJetifier=true
+        org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+        END_OF_FILE
+
         # Create root build.gradle
         cat << 'END_OF_FILE' > build.gradle
         buildscript {
