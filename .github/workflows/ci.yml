@@ -49,55 +49,61 @@ jobs:
     - name: Create Build Files
       run: |
         # Create root build.gradle
-        echo 'buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath "com.android.tools.build:gradle:8.1.0"
-            }
-        }
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }' > build.gradle
+        cat > build.gradle << 'EOL'
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.1.0"
+    }
+}
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+EOL
 
         # Create app/build.gradle
         mkdir -p app
-        echo 'plugins {
-            id "com.android.application"
+        cat > app/build.gradle << 'EOL'
+plugins {
+    id "com.android.application"
+}
+android {
+    namespace "com.aide.plus"
+    compileSdk 33
+    defaultConfig {
+        applicationId "com.aide.plus"
+        minSdk 21
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
-        android {
-            namespace "com.aide.plus"
-            compileSdk 33
-            defaultConfig {
-                applicationId "com.aide.plus"
-                minSdk 21
-                targetSdk 33
-                versionCode 1
-                versionName "1.0"
-            }
-            buildTypes {
-                release {
-                    minifyEnabled false
-                    proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-                }
-            }
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_17
-                targetCompatibility JavaVersion.VERSION_17
-            }
-        }
-        dependencies {
-            implementation "androidx.appcompat:appcompat:1.6.1"
-        }' > app/build.gradle
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.6.1"
+}
+EOL
 
         # Create settings.gradle
-        echo 'include ":app"
-        rootProject.name = "AIDE-Plus"' > settings.gradle
+        cat > settings.gradle << 'EOL'
+include ":app"
+rootProject.name = "AIDE-Plus"
+EOL
 
         # Create basic Android project structure
         mkdir -p app/src/main/java/com/aide/plus
@@ -105,7 +111,8 @@ jobs:
         mkdir -p app/src/main/res/values
 
         # Create AndroidManifest.xml
-        echo '<?xml version="1.0" encoding="utf-8"?>
+        cat > app/src/main/AndroidManifest.xml << 'EOL'
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:allowBackup="true"
@@ -121,10 +128,12 @@ jobs:
             </intent-filter>
         </activity>
     </application>
-</manifest>' > app/src/main/AndroidManifest.xml
+</manifest>
+EOL
 
         # Create MainActivity.java
-        echo 'package com.aide.plus;
+        cat > app/src/main/java/com/aide/plus/MainActivity.java << 'EOL'
+package com.aide.plus;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -135,10 +144,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
     }
-}' > app/src/main/java/com/aide/plus/MainActivity.java
+}
+EOL
 
         # Create activity_main.xml
-        echo '<?xml version="1.0" encoding="utf-8"?>
+        cat > app/src/main/res/layout/activity_main.xml << 'EOL'
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -148,13 +159,16 @@ public class MainActivity extends AppCompatActivity {
         android:layout_height="wrap_content"
         android:text="@string/app_name"
         android:layout_gravity="center"/>
-</LinearLayout>' > app/src/main/res/layout/activity_main.xml
+</LinearLayout>
+EOL
 
         # Create strings.xml
-        echo '<?xml version="1.0" encoding="utf-8"?>
+        cat > app/src/main/res/values/strings.xml << 'EOL'
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AIDE Plus</string>
-</resources>' > app/src/main/res/values/strings.xml
+</resources>
+EOL
 
     - name: Build APK
       run: |
