@@ -1,40 +1,71 @@
-name: Build and Test
+name: AIDE-Plus Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [ master, 2.3 ]
   pull_request:
-    branches:
-      - main
+    branches: [ master, 2.3 ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK
+      uses: actions/setup-java@v3
       with:
+        java-version: '17'
         distribution: 'temurin'
-        java-version: '11'
+        cache: gradle
 
-    - name: Cache Gradle packages
-      uses: actions/cache@v2
+    - name: Set up NDK
+      uses: nttld/setup-ndk@v1
       with:
-        path: ~/.gradle/caches
+        ndk-version: r25c
+        local-cache: true
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Install CMake
+      uses: lukka/get-cmake@latest
+      
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-
+      
     - name: Build with Gradle
-      run: ./gradlew build
-
+      run: ./gradlew assembleDebug
+      
     - name: Run Tests
       run: ./gradlew test
+      
+    - name: Build Native Libraries
+      run: |
+        cd native/EnsureCapacity
+        cmake .
+        make
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-debug
+        path: app_rewrite/build/outputs/apk/debug/*.apk
+        
+    - name: Upload Native Libraries
+      uses: actions/upload-artifact@v3
+      with:
+        name: native-libs
+        path: native/EnsureCapacity/build/*.so
