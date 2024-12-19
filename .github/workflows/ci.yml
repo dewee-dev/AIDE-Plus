@@ -143,4 +143,53 @@ EOF
           exit 1
         fi
       
-    # ... rest of the file remains the same ...
+    - name: Run Tests
+      if: always()  # Run even if build fails
+      run: |
+        if [ -f "app/build.gradle" ]; then
+          ./gradlew :app:test
+        elif [ -f "app_rewrite/build.gradle" ]; then
+          ./gradlew :app_rewrite:test
+        fi
+      continue-on-error: true
+      
+    - name: Build Native Libraries
+      if: always()  # Run even if previous steps fail
+      run: |
+        if [ -d "native/EnsureCapacity" ]; then
+          cd native/EnsureCapacity
+          cmake .
+          make
+        fi
+      continue-on-error: true
+        
+    - name: Upload APK
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-debug
+        path: |
+          app/build/outputs/apk/debug/*.apk
+          app_rewrite/build/outputs/apk/debug/*.apk
+          */build/outputs/apk/debug/*.apk
+        if-no-files-found: warn
+        
+    - name: Upload Native Libraries
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: native-libs
+        path: |
+          native/EnsureCapacity/build/*.so
+          */build/**/*.so
+        if-no-files-found: warn
+
+    - name: Upload Build Reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-reports
+        path: |
+          */build/reports/**/*
+          build/reports/**/*
+        if-no-files-found: warn
