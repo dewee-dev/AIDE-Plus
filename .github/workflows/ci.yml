@@ -28,6 +28,13 @@ jobs:
         
     - name: Setup Gradle
       run: |
+        # 下载并安装Gradle
+        wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
+        unzip gradle-7.3.3-bin.zip
+        export PATH=$PATH:$PWD/gradle-7.3.3/bin
+        
+        # 生成Gradle Wrapper
+        gradle wrapper
         chmod +x gradlew
         ./gradlew --version
 
