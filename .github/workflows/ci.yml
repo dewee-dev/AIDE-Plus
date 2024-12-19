@@ -40,10 +40,10 @@ jobs:
     - name: Setup Gradle
       run: |
         echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-        wget https://services.gradle.org/distributions/gradle-9.0-bin.zip
-        unzip gradle-9.0-bin.zip
-        export PATH=$PATH:$PWD/gradle-9.0/bin
-        gradle wrapper --gradle-version 9.0
+        wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
+        unzip gradle-8.5-bin.zip
+        export PATH=$PATH:$PWD/gradle-8.5/bin
+        gradle wrapper --gradle-version 8.5
         chmod +x gradlew
 
     - name: Create Build Files
