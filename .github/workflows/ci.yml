@@ -49,12 +49,10 @@ jobs:
 
     - name: Setup Gradle
       run: |
-        # 安装gradle
         wget https://services.gradle.org/distributions/gradle-7.3.3-bin.zip
         unzip gradle-7.3.3-bin.zip
         export PATH=$PATH:$PWD/gradle-7.3.3/bin
         
-        # 检查项目结构
         PROJECT_DIR=""
         if [ -f "app_rewrite/build.gradle" ]; then
           PROJECT_DIR="app_rewrite"
@@ -62,7 +60,6 @@ jobs:
           PROJECT_DIR="app"
         fi
         
-        # 初始化gradle项目
         if [ ! -f "settings.gradle" ]; then
           if [ ! -z "$PROJECT_DIR" ]; then
             echo "include ':$PROJECT_DIR'" > settings.gradle
@@ -72,67 +69,58 @@ jobs:
         fi
         
         if [ ! -f "build.gradle" ]; then
-          cat << EOF > build.gradle
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-EOF
+          echo 'buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath "com.android.tools.build:gradle:7.3.1"
+              }
+          }
+          
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }' > build.gradle
         fi
         
-        # 如果子项目不存在build.gradle，创建一个基本的
         if [ ! -z "$PROJECT_DIR" ] && [ ! -f "$PROJECT_DIR/build.gradle" ]; then
           mkdir -p $PROJECT_DIR
-          cat << EOF > $PROJECT_DIR/build.gradle
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion 33
-    defaultConfig {
-        applicationId "com.aide.plus"
-        minSdkVersion 21
-        targetSdkVersion 33
-        versionCode 1
-        versionName "1.0"
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-}
-EOF
+          echo 'apply plugin: "com.android.application"
+          
+          android {
+              compileSdkVersion 33
+              defaultConfig {
+                  applicationId "com.aide.plus"
+                  minSdkVersion 21
+                  targetSdkVersion 33
+                  versionCode 1
+                  versionName "1.0"
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+                  }
+              }
+          }
+          
+          dependencies {
+              implementation fileTree(dir: "libs", include: ["*.jar"])
+              implementation "androidx.appcompat:appcompat:1.6.1"
+          }' > "$PROJECT_DIR/build.gradle"
         fi
         
-        # 生成gradle wrapper
         gradle wrapper
         chmod +x gradlew
-        
-        # 显示项目结构
         ls -la
         ./gradlew projects
 
     - name: Build Project
       run: |
-        # 尝试构建找到的项目
         if [ -f "app_rewrite/build.gradle" ]; then
           ./gradlew :app_rewrite:assembleDebug --stacktrace
         elif [ -f "app/build.gradle" ]; then
@@ -144,7 +132,7 @@ EOF
         fi
       
     - name: Run Tests
-      if: always()  # Run even if build fails
+      if: always()
       run: |
         if [ -f "app/build.gradle" ]; then
           ./gradlew :app:test
@@ -154,7 +142,7 @@ EOF
       continue-on-error: true
       
     - name: Build Native Libraries
-      if: always()  # Run even if previous steps fail
+      if: always()
       run: |
         if [ -d "native/EnsureCapacity" ]; then
           cd native/EnsureCapacity
